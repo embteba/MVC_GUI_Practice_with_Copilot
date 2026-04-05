@@ -12,6 +12,7 @@ OOP設計に基づいて管理します。
 
 import streamlit as st
 import random
+from models.quiz_model import QuizModel
 
 
 class Page:
@@ -204,6 +205,69 @@ class QuizView:
         # 提出ボタン
         if st.button("結果提出"):
             st.session_state['submitted_answer'] = user_answer
+            st.session_state['current_page'] = 'result'
             st.rerun()
+
+
+class ResultView:
+    """
+    判定結果を表示するView。
+    
+    QuizModelで判定した結果を表示し、
+    新しい問題に挑戦するための「再チャレンジ」ボタンを提供します。
+    """
+    
+    def show(self):
+        """
+        判定結果を表示する。
+        """
+        # session_stateから必要なデータを取得
+        if 'quiz_data' not in st.session_state or 'submitted_answer' not in st.session_state:
+            st.warning("データがありません。出題ページから回答を提出してください。")
+            return
+        
+        quiz_data = st.session_state['quiz_data']
+        user_answer = st.session_state['submitted_answer']
+        correct_answer = quiz_data['answer']
+        
+        # QuizModelで判定
+        result = QuizModel.judge_answer(correct_answer, user_answer)
+        
+        # 結果表示
+        if result['is_correct']:
+            st.success(f"✅ {result['message']}")
+        else:
+            st.error(f"❌ {result['message']}")
+        
+        # 詳細情報表示
+        st.write(f"**問題**: {quiz_data['num1']} + {quiz_data['num2']} = ?")
+        st.write(f"**正解**: {result['correct_answer']}")
+        st.write(f"**あなたの回答**: {result['user_answer']}")
+        
+        # 再チャレンジボタン
+        if st.button("新しい問題に挑戦"):
+            # session_stateをリセット
+            st.session_state['quiz_data'] = self._generate_new_quiz()
+            if 'submitted_answer' in st.session_state:
+                del st.session_state['submitted_answer']
+            st.session_state['current_page'] = 'quiz'
+            st.rerun()
+    
+    @staticmethod
+    def _generate_new_quiz():
+        """
+        新しい問題を生成する。
+        
+        Returns:
+            dict: {'num1': int, 'num2': int, 'answer': int}
+        """
+        num1 = random.randint(1, 9)
+        num2 = random.randint(1, 9)
+        return {
+            'num1': num1,
+            'num2': num2,
+            'answer': num1 + num2
+        }
+
 
 

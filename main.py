@@ -9,7 +9,7 @@ UI表示処理はViews層に委譲します。
 """
 
 import streamlit as st
-from views.views import configure_page, Page, NavigationView, ContentView, QuizView
+from views.views import configure_page, Page, NavigationView, ContentView, QuizView, ResultView
 
 
 def main():
@@ -42,14 +42,23 @@ def main():
     navigation_view = NavigationView(pages)
     content_view = ContentView(pages)
     quiz_view = QuizView()
+    result_view = ResultView()
     
-    # ナビゲーション表示と選択ページ取得
+    # ナビゲーション表示（常にサイドバーを表示）
     selected_page_id = navigation_view.show()
+    
+    # session_state に current_page が設定されている場合（結果提出ボタン押下時）は、それを優先
+    if 'current_page' in st.session_state:
+        selected_page_id = st.session_state['current_page']
+        del st.session_state['current_page']  # 使用後に削除
     
     # ページIDに応じた表示
     if selected_page_id == "quiz":
         st.title("足し算問題")
         quiz_view.show()
+    elif selected_page_id == "result":
+        st.title("判定結果")
+        result_view.show()
     else:
         # その他のページ
         content_view.show(selected_page_id)
